@@ -60,23 +60,27 @@
       </el-row>
       <div class="" style="minHeight:500px;">
         <el-row class="colorChange" v-for="(eng,indexEng) in engList" :key="indexEng">
-          <el-col :span="2"><div class="eng_list">{{eng.num}}</div></el-col>
+          <el-col :span="2"><div class="eng_list">{{eng.num+1}}</div></el-col>
           <el-col :span="3"><div class="eng_list">{{eng.name}}</div></el-col>
           <el-col :span="3"><div class="eng_list">
-            <span v-if="eng.type==1">兼职</span>
+            <span v-if="eng.state==0">兼职</span>
             <span v-else>全职</span>
           </div></el-col>
-          <el-col :span="4"><div class="eng_list">{{eng.time}}</div></el-col>
-          <el-col :span="3"><div class="eng_list">{{eng.place}}</div></el-col>
-          <el-col :span="3"><div class="eng_list">{{eng.skill}}</div></el-col>
+          <el-col :span="4" v-if="eng.applyTime!=null&&eng.livePlace!=''"><div class="eng_list">{{eng.applyTime}}</div></el-col>
+          <el-col :span="4" v-else><div class="eng_list">-</div></el-col>
+          <el-col :span="3" v-if="eng.livePlace!=null&&eng.livePlace!=''"><div class="eng_list">{{eng.livePlace}}</div></el-col>
+          <el-col :span="3" v-else><div class="eng_list">-</div></el-col>
+          <el-col :span="3" v-if="eng.expert!=null&&eng.export!=''"><div class="eng_list">{{eng.expert}}</div></el-col>
+          <el-col :span="3" v-else><div class="eng_list">-</div></el-col>
           <el-col :span="2"><div class="eng_list">
             <i class="el-icon-s-order" @click="engSkill(indexEng)"></i>
           </div></el-col>
-          <el-col :span="2"><div class="eng_list">
+          <el-col :span="2" v-if="eng.state!=null&&eng.state!=''"><div class="eng_list">
             <span v-show="eng.state==1" class="pubSpan" style="background:#C93625;color:white;">已通过</span>
             <span v-show="eng.state==2" class="pubSpan" style="background:#666;color:white;">审核中</span>
             <span v-show="eng.state==3" class="pubSpan" style="background:#ccc;color:#333;">已驳回</span>
           </div></el-col>
+          <el-col :span="2" v-else><div class="eng_list">-</div></el-col>
           <el-col :span="2"><div class="eng_list">
             <i class="el-icon-edit" @click="editEng(indexEng)"></i>
             <i class="el-icon-delete" style="color:black;"></i>
@@ -90,9 +94,8 @@
          @size-change="handleSizeChange"
          @current-change="handleCurrentChange"
          :current-page.sync="currentPage3"
-         :page-size="100"
          layout="prev, pager, next, jumper"
-         :total="1000">
+         :total="pageNum">
        </el-pagination>
       </p>
     </div>
@@ -200,90 +203,7 @@ export default {
         state:1,
         picList:[]
       },
-      engList:[
-        {
-          num:1,
-          name:'海绵宝宝',
-          type:1,
-          time:'2019-08-09 16:50',
-          place:'北京-海淀',
-          phone:18888888477,
-          skill:'数通,IT',
-          picList:[
-            '../../../static/img/skill_bg.png',
-            '../../../static/img/skill_bg.png',
-            '../../../static/img/skill_bg.png',
-          ],
-          state:1,
-          skillPic:[
-            {
-              num:1,
-              picUrl:['../../../static/img/skill_bg.png'],
-              type:'网络高级工程师'
-            },
-            {
-              num:2,
-              picUrl:['../../../static/img/skill_bg.png'],
-              type:'数通高级工程师'
-            },
-          ]
-        },
-        {
-          num:2,
-          name:'派大星',
-          type:2,
-          time:'2019-08-09 16:50',
-          place:'北京-海淀',
-          skill:'数通,IT',
-          phone:132555645445,
-          picList:[
-            '../../../static/img/skill_bg.png',
-            '../../../static/img/skill_bg.png',
-            '../../../static/img/skill_bg.png',
-          ],
-          state:2,
-          skillPic:[
-            {
-              num:1,
-              picUrl:['../../../static/img/skill_bg.png'],
-              type:'网络高级工程师'
-            },
-            {
-              num:2,
-              picUrl:['../../../static/img/skill_bg.png'],
-              type:'数通高级工程师'
-            },
-          ]
-        },
-        {
-          num:3,
-          name:'章鱼哥',
-          type:2,
-          time:'2019-08-09 16:50',
-          place:'北京-海淀',
-          skill:'数通,IT',
-          phone:18756562363,
-          picList:[
-              '../../../static/img/skill_bg.png',
-              '../../../static/img/skill_bg.png',
-              '../../../static/img/skill_bg.png',
-
-          ],
-          state:3,
-          skillPic:[
-            {
-              num:1,
-              picUrl:['../../../static/img/skill_bg.png'],
-              type:'网络高级工程师'
-            },
-            {
-              num:2,
-              picUrl:['../../../static/img/skill_bg.png'],
-              type:'数通高级工程师'
-            },
-          ]
-        },
-      ],
+      engList:[],
       engSkillBox:false,//工程师证书列表
       engSkillList:[
         {
@@ -297,7 +217,16 @@ export default {
           type:'数通高级工程师'
         },
       ],
+      token:null,//接口验证
+      page:0,//当前页
+      pageNum:10,//页码总数
     }
+  },
+  created(){
+    this.token=window.sessionStorage.getItem('token')
+  },
+  mounted(){
+    this.getEngList()
   },
   methods:{
     handleSizeChange(val) {
@@ -305,6 +234,26 @@ export default {
     },
     handleCurrentChange(val) {
       console.log(`当前页: ${val}`);
+    },
+    getEngList(){//获取工程师列表
+      let _vm=this;
+      let formdata=new FormData();
+      formdata.append('page',_vm.page)
+      _vm.$axios.post(_vm.url+'/ict/engineer/findListByCondition',formdata,{
+        headers:{
+          'Authorization':_vm.token
+        }
+      }).then((res)=>{
+        console.log(res);
+        if(res.data.code==0){
+          _vm.pageNum=res.data.data.totalPages*10;
+          _vm.length=_vm.page*10;
+          res.data.data.content.forEach((e)=>{
+            _vm.$set(e,'num',_vm.length++);
+          });
+          _vm.engList=res.data.data.content;
+        }
+      })
     },
     editEng(index){//编辑工程师
       this.editMes=this.engList[index]

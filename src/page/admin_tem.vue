@@ -132,17 +132,17 @@ export default {
      if(this.abc.length<2){
        this.$router.push('/admin/wel')
      };
-     if(window.sessionStorage.getItem('adminMes')){
-       let mes=JSON.parse(window.sessionStorage.getItem('adminMes'));
-       if(mes.roleVO!=null){
-         // console.log(mes.roleVO)
-         mes.roleVO.usingTopChannelVOList.forEach((e)=>{
-           this.$set(e,'in','1-'+this.length++)
-         });
-       }else{
-         this.route=[{name:'暂无权限'}]
-       }
-     };
+     // if(window.sessionStorage.getItem('adminMes')){
+     //   let mes=JSON.parse(window.sessionStorage.getItem('adminMes'));
+     //   if(mes.roleVO!=null){
+     //     // console.log(mes.roleVO)
+     //     mes.roleVO.usingTopChannelVOList.forEach((e)=>{
+     //       this.$set(e,'in','1-'+this.length++)
+     //     });
+     //   }else{
+     //     this.route=[{name:'暂无权限'}]
+     //   }
+     // };
      this.route.forEach((e)=>{
        if(this.iconList[e.sort-1]!=undefined){
          this.$set(e,'icon',this.iconList[e.sort-1])

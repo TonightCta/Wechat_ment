@@ -199,6 +199,7 @@
 export default {
   data(){
     return{
+      aaa:null,
       currentPage3:0,
       searchMes:{
         engTypeText:null,//工程师类型筛选
@@ -246,7 +247,8 @@ export default {
           time:'2019-09-08 16:50',
           state:3,
         }
-      ]
+      ],
+      editMnetBox:false,      
     }
   },
   methods:{

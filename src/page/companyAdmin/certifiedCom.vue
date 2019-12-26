@@ -44,24 +44,32 @@
       </el-row>
       <div class="" style="minHeight:550px;">
         <el-row class="colorChange" v-for="(com,indexCom) in comList" :key="indexCom">
-          <el-col :span="2"><div class="com_list">{{com.num}}</div></el-col>
-          <el-col :span="5"><div class="com_list">{{com.name}}</div></el-col>
-          <el-col :span="3"><div class="com_list">{{com.time}}</div></el-col>
-          <el-col :span="2"><div class="com_list">{{com.bank}}</div></el-col>
-          <el-col :span="5"><div class="com_list">{{com.bankNum}}</div></el-col>
-          <el-col :span="3"><div class="com_list">
+          <el-col :span="2"><div class="com_list">{{com.num+1}}</div></el-col>
+          <el-col :span="5" v-if="com.name!=null&&com.name!=''"><div class="com_list">{{com.name}}</div></el-col>
+          <el-col :span="5" v-else><div class="com_list">-</div></el-col>
+          <el-col :span="3" v-if="com.applyTime!=null&&com.applyTime!=''"><div class="com_list">{{com.applyTime}}</div></el-col>
+          <el-col :span="3" v-else><div class="com_list">-</div></el-col>
+          <el-tooltip  v-if="com.accountName!=null&&com.accountName!=''" class="item" effect="dark" :content="com.accountName" placement="top">
+            <el-col :span="2"><div class="com_list">{{com.accountName.substring(0,5)}}...</div></el-col>
+         </el-tooltip>
+          <el-col :span="2" v-else><div class="com_list">-</div></el-col>
+          <el-col :span="5" v-if="com.accountNumber!=null&&com.accountNumber!=''"><div class="com_list">{{com.accountNumber}}</div></el-col>
+          <el-col :span="5" v-else><div class="com_list">-</div></el-col>
+          <el-col :span="3" v-if="com.businessLicense!=null&&com.businessLicense!=''"><div class="com_list">
             <viewer :images="com.pic">
               <img v-for="(lic,index) in com.pic"
-              :key="'Skill'+index" :src="lic" alt=""
+              :key="'Skill'+index" :src="url+'/'+lic" alt=""
               style="width:100px;height:40px;marginTop:5px;"
               >
             </viewer>
           </div></el-col>
-          <el-col :span="2"><div class="com_list">
+          <el-col :span="3" v-else><div class="com_list">-</div></el-col>
+          <el-col :span="2" v-if="com.state!=null&&com.state!=''"><div class="com_list">
             <span v-show="com.state==1" class="pubSpan" style="background:#C93625;color:white;">已通过</span>
             <span v-show="com.state==2" class="pubSpan" style="background:#666;color:white;">审核中</span>
             <span v-show="com.state==3" class="pubSpan" style="background:#ccc;color:#333;">已驳回</span>
           </div></el-col>
+          <el-col :span="2" v-else><div class="com_list">-</div></el-col>
           <el-col :span="2"><div class="com_list">
             <i class="el-icon-edit" @click="editCom(indexCom)"></i>
             <i class="el-icon-delete" style="color:black;"></i>
@@ -75,9 +83,8 @@
          @size-change="handleSizeChange"
          @current-change="handleCurrentChange"
          :current-page.sync="currentPage3"
-         :page-size="100"
          layout="prev, pager, next, jumper"
-         :total="1000">
+         :total="pageNum">
        </el-pagination>
       </p>
     </div>
@@ -172,8 +179,17 @@ export default {
           pic:['../../../static/img/skill_bg.png'],
           state:3
         },
-      ]
+      ],
+      token:null,//接口验证
+      page:0,//当前页
+      pageNum:10,//总页码
     }
+  },
+  created(){
+    this.token=window.sessionStorage.getItem('token')
+  },
+  mounted(){
+    this.getComList()
   },
   methods:{
     handleSizeChange(val) {
@@ -184,7 +200,29 @@ export default {
     },
     editCom(index){
       this.editComBox=true;
-    }
+    },
+    getComList(){//获取企业列表
+      let $this=this;
+      let formdata=new FormData();
+      formdata.append('page',$this.page);
+      $this.$axios.post($this.url+'/ict/customer/findListByCondition',formdata,{
+        headers:{
+          'Authorization':$this.token
+        }
+      }).then((res)=>{
+        console.log(res);
+        if(res.data.code==0){
+          $this.pageNum=res.data.data.totalPages*10;
+          $this.length=$this.page*10;
+          res.data.data.content.forEach((e)=>{
+            $this.$set(e,'num',$this.length++);
+            $this.$set(e,'pic',[]);
+            e.pic.push(e.businessLicense)
+          });
+          $this.comList=res.data.data.content;
+        }
+      })
+    },
   }
 }
 </script>

@@ -60,20 +60,20 @@
       </el-row>
       <div class="" style="minHeight:500px;">
         <el-row class="colorChange" v-for="(dem,indexDe) in demList" :key="indexDe">
-          <el-col :span="2"><div class="dem_list">{{dem.num}}</div></el-col>
+          <el-col :span="2"><div class="dem_list">{{dem.num+1}}</div></el-col>
           <el-col :span="2"><div class="dem_list">
-            <span v-if="dem.type==1">企业</span>
+            <span v-if="dem.state==0">企业</span>
             <span v-else>个人</span>
           </div></el-col>
-          <el-col :span="4"><div class="dem_list">{{dem.cusName}}</div></el-col>
-          <el-col :span="5"><div class="dem_list">{{dem.name}}</div></el-col>
-          <el-col :span="2"><div class="dem_list">{{dem.phone}}</div></el-col>
+          <el-col :span="4"><div class="dem_list">{{dem.linkman}}</div></el-col>
+          <el-col :span="5"><div class="dem_list">{{dem.projectName}}</div></el-col>
+          <el-col :span="2"><div class="dem_list">{{dem.contact}}</div></el-col>
           <el-col :span="3"><div class="dem_list">{{dem.address}}</div></el-col>
-          <el-col :span="2"><div class="dem_list">{{dem.time}}</div></el-col>
+          <el-col :span="2"><div class="dem_list">{{dem.createTime}}</div></el-col>
           <el-col :span="2"><div class="dem_list">
-            <span v-show="dem.state==1" class="pubSpan" style="background:#C93625;color:white;">已通过</span>
-            <span v-show="dem.state==2" class="pubSpan" style="background:#666;color:white;">审核中</span>
-            <span v-show="dem.state==3" class="pubSpan" style="background:#ccc;color:#333;">已驳回</span>
+            <span v-show="dem.state==0" class="pubSpan" style="background:#C93625;color:white;">已通过</span>
+            <span v-show="dem.state==1" class="pubSpan" style="background:#666;color:white;">审核中</span>
+            <span v-show="dem.state==2" class="pubSpan" style="background:#ccc;color:#333;">已驳回</span>
           </div></el-col>
           <el-col :span="2"><div class="dem_list">
             <i class="el-icon-edit" @click="editDemBox=true"></i>
@@ -210,39 +210,17 @@ export default {
         lastTime:null,//结束时间
       },
       editDemBox:false,//编辑需求盒子
-      demList:[
-        {
-          num:1,
-          type:1,
-          cusName:'海绵宝宝',
-          name:'北京XXXX项目',
-          phone:18965555455,
-          address:'北京XXXXXXXXXXX号',
-          time:'2018-09-08 16:50',
-          state:1
-        },
-        {
-          num:1,
-          type:2,
-          cusName:'海绵宝宝',
-          name:'北京XXXX项目',
-          phone:18965555455,
-          address:'北京XXXXXXXXXXX号',
-          time:'2018-09-08 16:50',
-          state:2
-        },
-        {
-          num:1,
-          type:1,
-          cusName:'海绵宝宝',
-          name:'北京XXXX项目',
-          phone:18965555455,
-          address:'北京XXXXXXXXXXX号',
-          time:'2018-09-08 16:50',
-          state:3
-        },
-      ]
+      demList:[],
+      token:null,//接口验证
+      page:0,//当前页
+      pageNum:0,//总页数
     }
+  },
+  created(){
+    this.token=window.sessionStorage.getItem('token')
+  },
+  mounted(){
+    this.getDemadnList()
   },
   methods:{
     handleSizeChange(val) {
@@ -250,6 +228,30 @@ export default {
     },
     handleCurrentChange(val) {
       console.log(`当前页: ${val}`);
+    },
+    getDemadnList(){//获取需求列表
+      let _this=this;
+      let formdata=new FormData();
+      formdata.append('page',_this.page);
+      _this.$axios.post(_this.url+'/ict/demand/findListByCondition',formdata,{
+        headers:{
+          'Authorization':_this.token
+        }
+      }).then((res)=>{
+        if(res.data.code==0){
+          console.log(res)
+          _this.pageNum=res.data.data.totalPages*10;
+          _this.length=_this.page*10;
+          res.data.data.content.forEach((e)=>{
+            _this.$set(e,'num',_this.length++);
+          });
+          _this.demList=res.data.data.content;
+        }else{
+          _this.$toast(res.data.msg)
+        }
+      }).catch((err)=>{
+        _this.$toast('未知错误,请联系客服')
+      })
     },
   }
 }

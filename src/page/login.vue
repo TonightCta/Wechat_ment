@@ -126,18 +126,15 @@ export default {
         let formdata=new FormData();
         formdata.append('name',_vm.userName);
         formdata.append('password',_vm.userPass);
-        _vm.$axios.post(_vm.url+'/login',formdata).then((res)=>{
+        _vm.$axios.post(_vm.url+'/ict/operator/login_name',formdata).then((res)=>{
+          console.log(res)
           if(res.data.code==0){
             _vm.$message({
              message: '登陆成功',
              type: 'success'
            });
-           window.sessionStorage.setItem('adminMes',JSON.stringify(res.data.data));
            _vm.$router.push('/admin')
-           window.sessionStorage.setItem('Uid',res.data.data.id);
-           if(res.data.data.engineerVO!=null){
-             window.sessionStorage.setItem('engID',res.data.data.engineerVO.id);
-           }
+           window.sessionStorage.setItem('token',res.data.data.token);
          }else{
            _vm.$message.error(res.data.msg)
          }
