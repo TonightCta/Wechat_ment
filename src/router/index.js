@@ -76,7 +76,7 @@ router.beforeEach((to,from,next)=>{
                  'CaseAdmin','AdminProject','AdminCreat'
                ];
   if(adminList.indexOf(to.name)>-1){
-    if(!window.sessionStorage.getItem('adminMes')){
+    if(!window.sessionStorage.getItem('token')){
       next('/');
     }
   };

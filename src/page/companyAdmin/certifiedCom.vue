@@ -26,11 +26,16 @@
         </li>
         <li>
           企业名称:&nbsp;
-          <el-input type="primary" placeholder="请输入工程师名称" style="width:300px;"></el-input>
-          <el-button type="primary" icon="el-icon-search" size="medium">搜索</el-button>
+          <el-input type="primary" placeholder="请输入工程师名称" style="width:300px;" v-model="searchMes.comName"></el-input>
+          <el-button type="primary" icon="el-icon-search" size="medium" @click="searchCom()">搜索</el-button>
         </li>
       </ul>
     </div>
+    <p class="refreshIcon">
+      <el-tooltip class="item" effect="dark" content="刷新数据" placement="top">
+        <i class="el-icon-refresh" @click="refreshData()"></i>
+      </el-tooltip>
+    </p>
     <div class="company_con">
       <el-row>
         <el-col :span="2"><div class="com_title">序号</div></el-col>
@@ -42,7 +47,7 @@
         <el-col :span="2"><div class="com_title">审核状态</div></el-col>
         <el-col :span="2"><div class="com_title">操作</div></el-col>
       </el-row>
-      <div class="" style="minHeight:550px;">
+      <div class="" style="minHeight:550px;" v-loading="isLoadCom">
         <el-row class="colorChange" v-for="(com,indexCom) in comList" :key="indexCom">
           <el-col :span="2"><div class="com_list">{{com.num+1}}</div></el-col>
           <el-col :span="5" v-if="com.name!=null&&com.name!=''"><div class="com_list">{{com.name}}</div></el-col>
@@ -64,15 +69,15 @@
             </viewer>
           </div></el-col>
           <el-col :span="3" v-else><div class="com_list">-</div></el-col>
-          <el-col :span="2" v-if="com.state!=null&&com.state!=''"><div class="com_list">
-            <span v-show="com.state==1" class="pubSpan" style="background:#C93625;color:white;">已通过</span>
-            <span v-show="com.state==2" class="pubSpan" style="background:#666;color:white;">审核中</span>
-            <span v-show="com.state==3" class="pubSpan" style="background:#ccc;color:#333;">已驳回</span>
+          <el-col :span="2"><div class="com_list">
+            <span v-show="com.state==2" class="pubSpan" style="background:#C93625;color:white;">已通过</span>
+            <span v-show="com.state==-1" class="pubSpan" style="background:#ccc;color:white;">已驳回</span>
+            <span v-show="com.state==0" class="pubSpan" style="background:#666;color:white;">未认证</span>
+            <span v-show="com.state==1" class="pubSpan" style="background:#999;color:white;">认证中</span>
           </div></el-col>
-          <el-col :span="2" v-else><div class="com_list">-</div></el-col>
           <el-col :span="2"><div class="com_list">
             <i class="el-icon-edit" @click="editCom(indexCom)"></i>
-            <i class="el-icon-delete" style="color:black;"></i>
+            <i class="el-icon-delete" style="color:#ccc;"></i>
           </div></el-col>
         </el-row>
       </div>
@@ -88,6 +93,7 @@
        </el-pagination>
       </p>
     </div>
+
     <!-- 编辑企业弹框 -->
     <div class="">
       <el-dialog
@@ -120,8 +126,8 @@
           </ul>
         </div>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="editComBox = false">驳回申请</el-button>
-          <el-button type="primary" @click="editComBox = false">通过申请</el-button>
+          <el-button @click="cancenAuth()">驳回认证</el-button>
+          <el-button type="primary" @click="turnAuth()">通过认证</el-button>
         </span>
       </el-dialog>
     </div>
@@ -137,6 +143,7 @@ export default {
       searchMes:{//筛选信息
         joinTime:null,//注册时间
         lastTime:null,//结束时间
+        comName:null,//企业名称
       },
       editMes:{
         num:2,
@@ -148,41 +155,11 @@ export default {
         pic:['../../../static/img/skill_bg.png'],
         state:2
       },
-      comList:[
-        {
-          num:1,
-          name:'北京xxx集团有限公司',
-          time:'2019-08-09 16:50',
-          phone:189856563256,
-          bank:'中国银行',
-          bankNum:621555545464546512345,
-          pic:['../../../static/img/skill_bg.png'],
-          state:1
-        },
-        {
-          num:2,
-          name:'北京xxx集团有限公司',
-          time:'2019-08-09 16:50',
-          phone:189856563256,
-          bank:'中国银行',
-          bankNum:621555545464546512345,
-          pic:['../../../static/img/skill_bg.png'],
-          state:2
-        },
-        {
-          num:3,
-          name:'北京xxx集团有限公司',
-          time:'2019-08-09 16:50',
-          phone:189856563256,
-          bank:'中国银行',
-          bankNum:621555545464546512345,
-          pic:['../../../static/img/skill_bg.png'],
-          state:3
-        },
-      ],
+      comList:[],
       token:null,//接口验证
       page:0,//当前页
       pageNum:10,//总页码
+      isLoadCom:false,//列表加载动画
     }
   },
   created(){
@@ -192,35 +169,132 @@ export default {
     this.getComList()
   },
   methods:{
+    refreshData(){//刷新数据
+      this.getComList();
+      this.searchMes={
+        joinTime:null,//注册时间
+        lastTime:null,//结束时间
+        comName:null,//企业名称
+      }
+    },
+    searchCom(){//搜索企业
+      let _this=this;
+      _this.isLoadCom=true;
+      let formdata=new FormData()
+      if(_this.searchMes.joinTime!=null&&_this.searchMes.joinTime!=''){
+        formdata.append('applyTimeMin',_this.searchMes.joinTime)
+      };
+      if(_this.searchMes.lastTime!=null&&_this.searchMes.lastTime!=''){
+        formdata.append('applyTimeMax',_this.searchMes.lastTime)
+      };
+      if(_this.searchMes.comName!=null&&_this.searchMes.comName!=''){
+        formdata.append('name',_this.searchMes.comName)
+      };
+      _this.$axios.post(_this.url+'/ict/customer/findListByCondition',formdata,{
+        headers:{
+          'Authorization':_this.token
+        }
+      }).then((res)=>{
+        console.log(res)
+        if(res.data.code==0){
+          _this.pageNum=res.data.data.totalPages*10;
+          _this.length=_this.page*10;
+          res.data.data.content.forEach((e)=>{
+            _this.$set(e,'num',_this.length++);
+            _this.$set(e,'pic',[]);
+            e.pic.push(e.businessLicense);
+          });
+          _this.isLoadCom=false;
+          _this.comList=res.data.data.content;
+        }else{
+          _this.isLoadCom=false;
+          _this.$message.error(res.data.msg)
+        }
+      }).catch((err)=>{
+        console.log(err)
+      })
+    },
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);
     },
     handleCurrentChange(val) {
+      console.log(val)
       console.log(`当前页: ${val}`);
     },
-    editCom(index){
+    editCom(index){//企业详情
+      this.editMes=this.comList[index];
       this.editComBox=true;
     },
     getComList(){//获取企业列表
       let $this=this;
       let formdata=new FormData();
+      $this.isLoadCom=true;
       formdata.append('page',$this.page);
       $this.$axios.post($this.url+'/ict/customer/findListByCondition',formdata,{
         headers:{
           'Authorization':$this.token
         }
       }).then((res)=>{
-        console.log(res);
         if(res.data.code==0){
           $this.pageNum=res.data.data.totalPages*10;
           $this.length=$this.page*10;
           res.data.data.content.forEach((e)=>{
             $this.$set(e,'num',$this.length++);
             $this.$set(e,'pic',[]);
-            e.pic.push(e.businessLicense)
+            e.pic.push(e.businessLicense);
           });
+          $this.isLoadCom=false;
           $this.comList=res.data.data.content;
+        }else{
+          $this.isLoadCom=false;
+          $this.$message.error(res.data.msg)
         }
+      }).catch((err)=>{
+        $this.$message.error('未知错误,请联系管理员')
+        $this.isLoadCom=false;
+      })
+    },
+    turnAuth(){//通过认证
+      let _this=this;
+      let formdata=new FormData();
+      formdata.append('id',_this.editMes.id);
+      formdata.append('state',1);
+      _this.$axios.post(_this.url+'/ict/customer/updateState',formdata,{
+        headers:{
+          'Authorization':_this.token
+        }
+      }).then((res)=>{
+        if(res.data.code==0){
+          _this.$message.success('已通过该企业认证');
+          _this.getComList();
+          _this.editComBox=false;
+        }else{
+          _this.$message.error(res.data.msg)
+        }
+      }).catch((err)=>{
+        _this.$message.error('未知错误,请联系管理员')
+        console.log(err)
+      })
+    },
+    cancenAuth(){//驳回认证
+      let _this=this;
+      let formdata=new FormData();
+      formdata.append('id',_this.editMes.id);
+      formdata.append('state',-1);
+      _this.$axios.post(_this.url+'/ict/customer/updateState',formdata,{
+        headers:{
+          'Authorization':_this.token
+        }
+      }).then((res)=>{
+        if(res.data.code==0){
+          _this.$message.success('已驳回该企业认证');
+          _this.getComList();
+          _this.editComBox=false;
+        }else{
+          _this.$message.error(res.data.msg)
+        }
+      }).catch((err)=>{
+        _this.$message.error('未知错误,请联系管理员')
       })
     },
   }
@@ -235,7 +309,6 @@ export default {
   position: relative;
   .com_search{
     width: 100%;
-    border-bottom:1px solid #eee;
     ul{
       width: 70%;
       margin:0 auto;
@@ -289,8 +362,6 @@ export default {
     margin:0 auto;
     display: flex;
     font-size: 16px;
-    height: 450px;
-    overflow: auto;
     .edit_title{
       width: 30%;
       li{
@@ -308,6 +379,20 @@ export default {
       li:last-child{
         margin-top:20px;
       }
+    }
+  }
+  .refreshIcon{
+    display: inline-block;
+    width: 100%;
+    border-bottom:1px solid #eee;
+    padding-bottom: 3px;
+    text-align: right;
+    box-sizing: border-box;
+    padding-right: 15px;
+    i{
+      font-size: 36px;
+      color:#C93625;
+      cursor:pointer;
     }
   }
 }

@@ -14,7 +14,7 @@
          </el-select>
         </li>
         <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;手机号:&nbsp;
-          <el-input type="primary" size="medium" placeholder="请输入工程师联系方式" style="width:300px;"></el-input>
+          <el-input type="primary" size="medium" placeholder="请输入工程师联系方式" style="width:300px;" v-model="searchMes.engPhone"></el-input>
         </li>
       </ul>
       <ul>
@@ -41,11 +41,16 @@
         </li>
         <li>
           工程师名称:&nbsp;
-          <el-input type="primary" placeholder="请输入工程师名称" style="width:300px;"></el-input>
-          <el-button type="primary" icon="el-icon-search" size="medium">搜索</el-button>
+          <el-input type="primary" placeholder="请输入工程师名称" style="width:300px;" v-model="searchMes.engName"></el-input>
+          <el-button type="primary" icon="el-icon-search" size="medium" @click="searchEng()">搜索</el-button>
         </li>
       </ul>
     </div>
+    <p class="refreshIcon">
+      <el-tooltip class="item" effect="dark" content="刷新数据" placement="top">
+        <i class="el-icon-refresh" @click="refreshData()"></i>
+      </el-tooltip>
+    </p>
     <div class="eng_con">
       <el-row>
         <el-col :span="2"><div class="eng_title">序号</div></el-col>
@@ -58,32 +63,36 @@
         <el-col :span="2"><div class="eng_title">审核状态</div></el-col>
         <el-col :span="2"><div class="eng_title">操作</div></el-col>
       </el-row>
-      <div class="" style="minHeight:500px;">
+      <div class="" style="minHeight:500px;" v-loading="isLoadEng">
         <el-row class="colorChange" v-for="(eng,indexEng) in engList" :key="indexEng">
           <el-col :span="2"><div class="eng_list">{{eng.num+1}}</div></el-col>
           <el-col :span="3"><div class="eng_list">{{eng.name}}</div></el-col>
           <el-col :span="3"><div class="eng_list">
-            <span v-if="eng.state==0">兼职</span>
-            <span v-else>全职</span>
+            <span v-if="eng.fullTime">全职</span>
+            <span v-else>兼职</span>
+            <!-- <span v-else>全职</span> -->
           </div></el-col>
           <el-col :span="4" v-if="eng.applyTime!=null&&eng.livePlace!=''"><div class="eng_list">{{eng.applyTime}}</div></el-col>
           <el-col :span="4" v-else><div class="eng_list">-</div></el-col>
           <el-col :span="3" v-if="eng.livePlace!=null&&eng.livePlace!=''"><div class="eng_list">{{eng.livePlace}}</div></el-col>
           <el-col :span="3" v-else><div class="eng_list">-</div></el-col>
-          <el-col :span="3" v-if="eng.expert!=null&&eng.export!=''"><div class="eng_list">{{eng.expert}}</div></el-col>
+          <el-tooltip class="item" effect="dark" :content="eng.expert" placement="bottom" v-if="eng.expert!=null&&eng.export!=''">
+            <el-col :span="3"><div class="eng_list" style="cursor:pointer;">{{eng.expert.substring(0,10)}}...</div></el-col>
+          </el-tooltip>
           <el-col :span="3" v-else><div class="eng_list">-</div></el-col>
           <el-col :span="2"><div class="eng_list">
             <i class="el-icon-s-order" @click="engSkill(indexEng)"></i>
           </div></el-col>
-          <el-col :span="2" v-if="eng.state!=null&&eng.state!=''"><div class="eng_list">
-            <span v-show="eng.state==1" class="pubSpan" style="background:#C93625;color:white;">已通过</span>
-            <span v-show="eng.state==2" class="pubSpan" style="background:#666;color:white;">审核中</span>
-            <span v-show="eng.state==3" class="pubSpan" style="background:#ccc;color:#333;">已驳回</span>
+          <el-col :span="2"><div class="eng_list">
+            <span v-show="eng.state==2" class="pubSpan" style="background:#C93625;color:white;">已通过</span>
+            <span v-show="eng.state==-1" class="pubSpan" style="background:#ccc;color:white;">已驳回</span>
+            <span v-show="eng.state==0" class="pubSpan" style="background:#666;color:white;">未认证</span>
+            <span v-show="eng.state==1" class="pubSpan" style="background:#999;color:white;">认证中</span>
           </div></el-col>
-          <el-col :span="2" v-else><div class="eng_list">-</div></el-col>
+          <!-- <el-col :span="2" v-else><div class="eng_list">-</div></el-col> -->
           <el-col :span="2"><div class="eng_list">
             <i class="el-icon-edit" @click="editEng(indexEng)"></i>
-            <i class="el-icon-delete" style="color:black;"></i>
+            <i class="el-icon-delete" style="color:#ccc;"></i>
           </div></el-col>
         </el-row>
       </div>
@@ -139,8 +148,8 @@
           </ul>
         </div>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="editEngBox = false" size="medium">驳回申请</el-button>
-          <el-button type="primary" @click="editEngBox = false" size="medium">通过申请</el-button>
+          <el-button @click="cancenAuth()" size="medium">驳回认证</el-button>
+          <el-button type="primary" @click="turnAuth()" size="medium">通过认证</el-button>
         </span>
       </el-dialog>
     </div>
@@ -180,16 +189,18 @@ export default {
         engTypeText:null,//工程师类型筛选
         engTypeList:[
           {
-            value:'1',
+            value:'false',
             label:'兼职',
           },
           {
-            value:'2',
+            value:'true',
             label:'全职',
           }
         ],
         joinTime:null,//注册时间
         lastTime:null,//结束时间
+        engPhone:null,//工程师手机号
+        engName:null,//工程师姓名
       },
       currentPage3:0,//分页器指定页数
       editEngBox:false,//编辑工程师盒子
@@ -220,6 +231,8 @@ export default {
       token:null,//接口验证
       page:0,//当前页
       pageNum:10,//页码总数
+      toekn:window.sessionStorage.getItem('token'),
+      isLoadEng:false,//列表加载
     }
   },
   created(){
@@ -230,38 +243,155 @@ export default {
   },
   methods:{
     handleSizeChange(val) {
-      console.log(`每页 ${val} 条`);
+      // console.log(`每页 ${val} 条`);
     },
     handleCurrentChange(val) {
-      console.log(`当前页: ${val}`);
+      // console.log(`当前页: ${val}`);
+    },
+    refreshData(){
+      this.getEngList();
+      this.searchMes={
+        engTypeText:null,//工程师类型筛选
+        engTypeList:[
+          {
+            value:'false',
+            label:'兼职',
+          },
+          {
+            value:'true',
+            label:'全职',
+          }
+        ],
+        joinTime:null,//注册时间
+        lastTime:null,//结束时间
+        engPhone:null,//工程师手机号
+        engName:null,//工程师姓名
+      }
+    },
+    searchEng(){//搜索工程师
+      console.log(this.searchMes);
+      let _vm=this;
+      // if(){
+      //   this.$message.error('请输入正确的手机号')
+      // }else{
+        this.isLoadEng=true;
+        console.log(this.searchMes.engTypeText)
+        let formdata=new FormData();
+        formdata.append('page',this.page)
+        if(this.searchMes.engName!=null&&this.engName!=''){
+          formdata.append('realName',this.searchMes.engName)
+        };
+        if(this.searchMes.engPhone!=null&&this.engPhone!=''){
+          formdata.append('phone',this.searchMes.engPhone)
+        };
+        if(this.searchMes.engTypeText!=null&&this.engTypeText!=''){
+          formdata.append('fullTime',this.searchMes.engTypeText)
+        };
+        if(this.searchMes.joinTime!=null&&this.joinTime!=''){
+          formdata.append('applyTimeMin',this.searchMes.joinTime)
+        };
+        if(this.searchMes.lastTime!=null&&this.lastTime!=''){
+          formdata.append('applyTimeMax',this.searchMes.lastTime)
+        };
+        this.$axios.post(this.url+'/ict/engineer/findListByCondition',formdata,{
+          headers:{
+            'Authorization':this.token
+          }
+        }).then((res)=>{
+          console.log(res)
+          if(res.data.code==0){
+            _vm.isLoadEng=false;
+            _vm.pageNum=res.data.data.totalPages*10;
+            _vm.length=_vm.page*10;
+            res.data.data.content.forEach((e)=>{
+              _vm.$set(e,'num',_vm.length++);
+            });
+            _vm.engList=res.data.data.content;
+          }else{
+            _vm.isLoadEng=false;
+            _vm.$message.error(res.data.msg)
+          }
+        }).catch((err)=>{
+          _vm.$message.error('未知错误,请联系管理员')
+          _vm.isLoadEng=false;
+        })
+      // }
     },
     getEngList(){//获取工程师列表
       let _vm=this;
       let formdata=new FormData();
+      _vm.isLoadEng=true;
       formdata.append('page',_vm.page)
       _vm.$axios.post(_vm.url+'/ict/engineer/findListByCondition',formdata,{
         headers:{
           'Authorization':_vm.token
         }
       }).then((res)=>{
-        console.log(res);
         if(res.data.code==0){
+          _vm.isLoadEng=false;
           _vm.pageNum=res.data.data.totalPages*10;
           _vm.length=_vm.page*10;
           res.data.data.content.forEach((e)=>{
             _vm.$set(e,'num',_vm.length++);
           });
           _vm.engList=res.data.data.content;
+        }else{
+          _vm.isLoadEng=false;
+          _vm.$message.error(res.data.msg)
         }
+      }).catch((err)=>{
+        _vm.$message.error('未知错误,请联系管理员')
+        _vm.isLoadEng=false;
       })
     },
     editEng(index){//编辑工程师
       this.editMes=this.engList[index]
       this.editEngBox=true;
     },
-    engSkill(index){
+    engSkill(index){//工程师证书盒子
       this.engSkillList=this.engList[index].skillPic;
       this.engSkillBox=true;
+    },
+    turnAuth(){//通过认证
+      let formdata=new FormData();
+      formdata.append('id',this.editMes.id);
+      formdata.append('state',2);
+      this.$axios.post(this.url+'/ict/engineer/updateState',formdata,{
+        headers:{
+          'Authorization':this.token
+        }
+      }).then((res)=>{
+        if(res.data.code==0){
+          this.getEngList();
+          this.$message.success('已通过该工程师认证');
+          this.editEngBox=false;
+        }else{
+          this.$message.error(res.data.msg)
+        }
+      }).catch((err)=>{
+        this.$message.error('未知错误,请联系管理员')
+        this.editEngBox=false;
+      })
+    },
+    cancenAuth(){//驳回申请
+      let formdata=new FormData();
+      formdata.append('id',this.editMes.id);
+      formdata.append('state',-1);
+      this.$axios.post(this.url+'/ict/engineer/updateState',formdata,{
+        headers:{
+          'Authorization':this.toekn
+        }
+      }).then((res)=>{
+        if(res.data.code==0){
+          this.getEngList();
+          this.$message.success('已驳回该工程师的认证')
+          this.editEngBox=false;
+        }else{
+          this.$message.error(res.data.msg)
+        }
+      }).catch((err)=>{
+        this.$message.error('未知错误,请联系管理员')
+      })
     },
   }
 }
@@ -275,8 +405,6 @@ export default {
   position: relative;
   .eng_search{
     width: 100%;
-    border-bottom:1px solid #eee;
-    padding-bottom: 40px;
     ul{
       width: 70%;
       margin:0 auto;
@@ -367,6 +495,20 @@ export default {
           margin-top: 20px;
         }
       }
+    }
+  }
+  .refreshIcon{
+    display: inline-block;
+    width: 100%;
+    border-bottom:1px solid #eee;
+    padding-bottom: 3px;
+    text-align: right;
+    box-sizing: border-box;
+    padding-right: 15px;
+    i{
+      font-size: 36px;
+      color:#C93625;
+      cursor:pointer;
     }
   }
 }
