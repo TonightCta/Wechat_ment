@@ -28,7 +28,8 @@
         </el-row>
         <p class="login_sub">
           <el-button type="primary" style="fontSize:16px;margin-left:40px;" size="mini" :disabled="disabled" @click="loginSub()">&nbsp;&nbsp;登录&nbsp;&nbsp;</el-button>
-          <el-button type="primary" style="fontSize:16px;" size="mini" @click="registerBox=true">&nbsp;&nbsp;注册&nbsp;&nbsp;</el-button>
+          <!-- <el-button type="primary" style="fontSize:16px;" size="mini" @click="registerBox=true">&nbsp;&nbsp;注册&nbsp;&nbsp;</el-button> -->
+          
         </p>
       </div>
     </div>

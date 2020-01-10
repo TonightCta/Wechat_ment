@@ -90,7 +90,7 @@
         <el-row class="colorChange" v-for="(dem,indexDe) in demList" :key="indexDe">
           <el-col :span="2"><div class="dem_list">{{dem.num+1}}</div></el-col>
           <el-col :span="2"><div class="dem_list">
-            <span v-if="dem.state==0">企业</span>
+            <span v-if="dem.customerType==0">企业</span>
             <span v-else>个人</span>
           </div></el-col>
           <el-col :span="4"><div class="dem_list">{{dem.linkman}}</div></el-col>

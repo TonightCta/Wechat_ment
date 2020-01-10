@@ -84,14 +84,14 @@
         <el-col :span="3"><div class="dem_title">服务地址</div></el-col>
         <el-col :span="2"><div class="dem_title">发起时间</div></el-col>
         <el-col :span="2"><div class="dem_title">申请列表</div></el-col>
-        <el-col :span="2"><div class="dem_title">审核状态</div></el-col>
+        <el-col :span="2"><div class="dem_title">需求状态</div></el-col>
         <el-col :span="2"><div class="dem_title">操作</div></el-col>
       </el-row>
       <div class="" style="minHeight:500px;" v-loading="loadMent">
         <el-row class="colorChange" v-for="(dem,indexDe) in demList" :key="indexDe">
           <el-col :span="2"><div class="dem_list">{{dem.num+1}}</div></el-col>
           <el-col :span="2"><div class="dem_list">
-            <span v-if="dem.state==0">企业</span>
+            <span v-if="dem.customerType==0">企业</span>
             <span v-else>个人</span>
           </div></el-col>
           <el-col :span="2"><div class="dem_list">{{dem.linkman}}</div></el-col>
@@ -107,7 +107,7 @@
             <span v-show="dem.state==1" class="pubSpan" style="background:#eee;color:#C93625;">已通过</span>
             <span v-show="dem.state==2" class="pubSpan" style="background:#C93625;color:white;">已委派</span>
             <span v-show="dem.state==3" class="pubSpan" style="background:green;color:white;">已开工</span>
-            <span v-show="dem.state==4" class="pubSpan" style="background:#C93625;color:white;">已完工</span>
+            <span v-show="dem.state==4" class="pubSpan" style="background:#C93625;color:white;">已完成</span>
             <span v-show="dem.state==5" class="pubSpan" style="background:#C93625;color:white;">已付款</span>
             <span v-show="dem.state==-1" class="pubSpan" style="background:#ccc;color:#333;">已驳回</span>
           </div></el-col>
@@ -138,6 +138,7 @@
         width="40%">
         <div class="editDem">
           <ul class="edit_title">
+            <li>需求状态:</li>
             <li>主体类型:</li>
             <li>名称:</li>
             <li>项目名称:</li>
@@ -153,6 +154,16 @@
             <li>审核状态:</li>
           </ul>
           <ul class="edit_con">
+            <li>
+              <el-select v-model="editMes.state" placeholder="请选择" style="width:330px;" size="medium">
+                 <el-option
+                   v-for="item in demandState"
+                   :key="item.value"
+                   :label="item.label"
+                   :value="item.value">
+                 </el-option>
+               </el-select>
+            </li>
             <li>
               {{editMes.type}}
             </li>
@@ -319,6 +330,25 @@ export default {
         }
       ],
       isHasAppPeo:false,//是否有申请者
+      demandState:[
+        {
+          value:1,
+          label:'未分配'
+        },
+        {
+          value:2,
+          label:'已分配'
+        },
+        {
+          value:3,
+          label:'待交付'
+        },
+        {
+          value:4,
+          label:'已完成'
+        },
+      ],
+      stateText:null,//需求状态
     }
   },
   created(){
@@ -361,6 +391,7 @@ export default {
             _this.$set(e,'num',_this.length++);
           });
           _this.demList=res.data.data.content;
+          console.log(_this.demList)
         }else{
           _this.loadMent=false;
           _this.$toast(res.data.msg)
@@ -371,11 +402,13 @@ export default {
       })
     },
     editDemand(index){//编辑需求盒子
-      this.editMes=this.demList[index]
+      this.editMes=this.demList[index];
+      console.log(this.editMes)
       this.editDemBox=true;
     },
     changeDemand(){//提交修改需求信息
       let _this=this;
+      console.log(_this.editMes.state)
       if(_this.editMes.projectName==''){
         _this.$message.error('请输入项目名称')
       }else if(_this.editMes.type==''){
@@ -413,6 +446,7 @@ export default {
         formdata.append('content',_this.editMes.content);
         formdata.append('remark',_this.editMes.remark);
         formdata.append('brand',_this.editMes.brand);
+        formdata.append('state',_this.editMes.state);
         _this.$axios.post(_this.url+'/ict/demand/edit',formdata,{
           headers:{
             'Authorization':_this.token
