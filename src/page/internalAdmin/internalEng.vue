@@ -181,10 +181,10 @@
         <div class="ensSkillBox">
           <ul>
             <li v-for="(engPic,indexSk) in engSkillList" :key="indexSk">
-              <span>{{engPic.num}}、{{engPic.type}}</span>
-              <viewer :images="engPic.picUrl">
-                <img v-for="(skillS,index) in engPic.picUrl"
-                :key="'Skill'+index" :src="skillS" alt=""
+              <span>{{engPic.name}}、{{engPic.industry}}</span>
+              <viewer :images="engSkillList">
+                <img v-for="(skillS,index) in engSkillList"
+                :key="'Skill'+index" :src="url+'/'+skillS.fileName" alt=""
                 style="width:240px;height:120px;cursor:pointer;border:1px solid #C93625;border-radius:8px;margin-left:10px;"
                 >
               </viewer>
@@ -369,7 +369,8 @@ export default {
       this.editEngBox=true;
     },
     engSkill(index){//工程师证书盒子
-      this.engSkillList=this.engList[index].skillPic;
+      console.log(this.engList[index])
+      this.engSkillList=this.engList[index].certificateVOList;
       this.engSkillBox=true;
     },
     turnAuth(){//通过认证
