@@ -117,6 +117,17 @@ export default {
                url:'/admin/demandMent'
              },
            ]
+         },
+         {
+           name:'消息管理',
+           sort:8,
+           in:'1-4',
+           usingChannelVOList:[
+             {
+               name:'消息中心',
+               url:'/admin/messageCenter'
+             }
+           ]
          }
        ],
        closeUrl:null,//暂存页面地址

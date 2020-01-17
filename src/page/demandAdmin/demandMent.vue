@@ -211,10 +211,10 @@
             <li>
               <el-input type="primary" style="width:330px;" placeholder="请输入备注" size="medium" v-model="editMes.remark"></el-input>
             </li>
-            <li>
+            <!-- <li>
               <el-button type="primary" size="medium" @click="passDemand()">审核通过</el-button>
               <el-button size="medium" @click="refuceDemand()">驳回</el-button>
-            </li>
+            </li> -->
           </ul>
         </div>
         <span slot="footer" class="dialog-footer">
@@ -457,6 +457,30 @@ export default {
             _this.$message.success('更新需求信息成功');
             _this.getDemadnList();
             _this.editDemBox=false;
+            let formdataA=new FormData();
+            let stateText=null;
+            if(_this.editMes.state==1){
+              stateText='接单'
+            }else if(_this.editMes.state==2){
+              stateText='分配工程师'
+            }else if(_this.editMes.state==3){
+              stateText='工程师开工'
+            }else if(_this.editMes.state==4){
+              stateText='代付款'
+            }
+            formdataA.append('operatorId',_this.editMes.operatorId);
+            formdataA.append('title','犀牛小哥')
+            formdataA.append('type','消息通知')
+            formdataA.append('content','您的项目'+_this.editMes.projectName+'已经进入'+stateText+'状态');
+            _this.$axios.post(_this.url+'/ict/message/sendForOperator',formdataA).then((res)=>{
+              if(res.data.code==0){
+
+              }else{
+                _this.$message.error(res.data.msg)
+              }
+            }).catch((err)=>{
+              _this.$message.error('未知错误,请联系管理员')
+            })
           }else{
             _this.$message.error(res.data.msg)
           }
@@ -509,6 +533,7 @@ export default {
     },
     applyMent(index){//申请管理
       let _this=this;
+      _this.editMes=this.demList[index];
       let formdata=new FormData();
       formdata.append('demandId',this.demList[index].id);
       _this.$axios.post(_this.url+'/ict/applyRecord/findListByCondition',formdata,{
@@ -552,12 +577,40 @@ export default {
           'Authorization':_this.token
         }
       }).then((res)=>{
-        console.log(res)
+        console.log(_this.editMes)
         if(res.data.code==0){
           if(val==='已入选'){
             _this.$message.success('已通过该工程师的申请')
+            let formdataA=new FormData();
+            formdataA.append('operatorId',res.data.data.operatorId)
+            formdataA.append('title','犀牛小哥')
+            formdataA.append('type','消息通知')
+            formdataA.append('content','您已通过'+_this.editMes.projectName+'的申请');
+            this.$axios.post(this.url+'/ict/message/sendForOperator',formdataA).then((res)=>{
+              if(res.data.code==0){
+
+              }else{
+                this.$message.error(res.data.msg)
+              }
+            }).catch((err)=>{
+              this.$message.error('授权登录失败,请返回后再试')
+            })
           }else{
             _this.$message.success('已驳回 该工程师的申请')
+            let formdataA=new FormData();
+            formdataA.append('operatorId',res.data.data.operatorId)
+            formdataA.append('title','犀牛小哥')
+            formdataA.append('type','消息通知')
+            formdataA.append('content','您未通过'+_this.editMes.projectName+'的申请');
+            this.$axios.post(this.url+'/ict/message/sendForOperator',formdataA).then((res)=>{
+              if(res.data.code==0){
+
+              }else{
+                this.$message.error(res.data.msg)
+              }
+            }).catch((err)=>{
+              this.$message.error('未知错误,请联系管理员')
+            })
           }
         }else{
           _this.$message.error(res.data.msg)

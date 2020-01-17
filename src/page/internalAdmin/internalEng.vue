@@ -127,23 +127,42 @@
           </ul>
           <ul class="edit_con">
             <li>{{editMes.name}}</li>
-            <li>{{editMes.phone}}</li>
             <li>
-              <span v-if="editMes.type==1">兼职</span>
-              <span v-else>全职</span>
+              <span v-if="editMes.phone!=null">{{editMes.phone}}</span>
+              <span v-else>-</span>
             </li>
-            <li>{{editMes.time}}</li>
-            <li>{{editMes.skill}},IT</li>
-            <li>123</li>
-            <li>{{editMes.place}}</li>
-            <li>{{editMes.place}}</li>
             <li>
-              <viewer :images="editMes.picList">
-                <img v-for="(skillPic,index) in editMes.picList"
-                :key="'Skill'+index" :src="skillPic" alt=""
+              <span>兼职</span>
+              <!-- <span v-else>全职</span> -->
+            </li>
+            <li>
+              <span v-if="editMes.applyTime!=null">{{editMes.applyTime}}</span>
+              <span v-else>-</span>
+            </li>
+            <li>
+              <span v-if="editMes.expert!=null">{{editMes.expert}}</span>
+              <span v-else>-</span>
+            </li>
+            <li>
+              <span v-if="editMes.serviceType!=null">{{editMes.serviceType}}</span>
+              <span v-else>-</span>
+            </li>
+            <li>
+              <span v-if="editMes.receivingPlace">{{editMes.receivingPlace}}</span>
+              <span v-else>-</span>
+            </li>
+            <li>
+              <span v-if="editMes.livePlace!=null">{{editMes.livePlace}}</span>
+              <span v-else>-</span>
+            </li>
+            <li>
+              <viewer :images="editMes.certificateVOList" v-if="editMes.certificateVOList!=null">
+                <img v-for="(skillPic,index) in editMes.certificateVOList"
+                :key="'Skill'+index" :src="url+'/'+skillPic.fileName" alt=""
                 style="width:240px;height:120px;cursor:pointer;border:1px solid #C93625;border-radius:8px;margin-left:10px;"
                 >
               </viewer>
+              <span v-else>-</span>
             </li>
           </ul>
         </div>
@@ -206,13 +225,13 @@ export default {
       editEngBox:false,//编辑工程师盒子
       editMes:{
         name:null,
-        type:1,
-        time:null,
-        place:null,
-        skill:null,
-        picList:[],
-        state:1,
-        picList:[]
+        phone:1,
+        applyTime:null,
+        expert:null,
+        serviceType:null,
+        receivingPlace:[],
+        livePlace:1,
+        certificateVOList:[]
       },
       engList:[],
       engSkillBox:false,//工程师证书列表
@@ -345,7 +364,8 @@ export default {
       })
     },
     editEng(index){//编辑工程师
-      this.editMes=this.engList[index]
+      this.editMes=this.engList[index];
+      console.log(this.editMes)
       this.editEngBox=true;
     },
     engSkill(index){//工程师证书盒子
@@ -361,10 +381,25 @@ export default {
           'Authorization':this.token
         }
       }).then((res)=>{
+        console.log(res)
         if(res.data.code==0){
           this.getEngList();
           this.$message.success('已通过该工程师认证');
           this.editEngBox=false;
+          let formdataA=new FormData();
+          formdataA.append('operatorId',res.data.data.ictOperatorVO.id)
+          formdataA.append('title','犀牛小哥')
+          formdataA.append('type','消息通知')
+          formdataA.append('content','您已通过平台工程师认证！');
+          this.$axios.post(this.url+'/ict/message/sendForOperator',formdataA).then((res)=>{
+            if(res.data.code==0){
+
+            }else{
+              this.$message.error(res.data.msg)
+            }
+          }).catch((err)=>{
+            this.$message.error('未知错误,请联系管理员')
+          })
         }else{
           this.$message.error(res.data.msg)
         }
@@ -386,6 +421,20 @@ export default {
           this.getEngList();
           this.$message.success('已驳回该工程师的认证')
           this.editEngBox=false;
+          let formdataA=new FormData();
+          formdataA.append('operatorId',res.data.data.ictOperatorVO.id)
+          formdataA.append('title','犀牛小哥')
+          formdataA.append('type','消息通知')
+          formdataA.append('content','您未通过平台工程师认证。');
+          this.$axios.post(this.url+'/ict/message/sendForOperator',formdataA).then((res)=>{
+            if(res.data.code==0){
+
+            }else{
+              this.$message.error(res.data.msg)
+            }
+          }).catch((err)=>{
+            this.$message.error('未知错误,请联系管理员')
+          })
         }else{
           this.$message.error(res.data.msg)
         }

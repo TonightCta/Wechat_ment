@@ -111,17 +111,30 @@
           </ul>
           <ul class="edit_con">
             <li>{{editMes.name}}</li>
-            <li>{{editMes.phone}}</li>
-            <li>{{editMes.time}}</li>
-            <li>{{editMes.bank}}</li>
-            <li>{{editMes.bankNum}}</li>
             <li>
-              <viewer :images="editMes.pic">
+              <span v-if="editMes.phone!=null">{{editMes.phone}}</span>
+              <span v-else>-</span>
+            </li>
+            <li>
+              <span v-if="editMes.applyTime!=null">{{editMes.applyTime}}</span>
+              <span v-else>-</span>
+            </li>
+            <li>
+              <span v-if="editMes.accountName!=null">{{editMes.accountName}}</span>
+              <span v-else>-</span>
+            </li>
+            <li>
+              <span v-if="editMes.accountNumber!=null">{{editMes.accountNumber}}</span>
+              <span v-else>-</span>
+            </li>
+            <li>
+              <viewer :images="editMes.pic" v-if="editMes.businessLicense!=null">
                 <img v-for="(lic,index) in editMes.pic"
-                :key="'Skill'+index" :src="lic" alt=""
+                :key="'Skill'+index" :src="url+'/'+lic" alt=""
                 style="width:240px;height:120px;cursor:pointer;border:1px solid #C93625;border-radius:8px;margin-left:10px;"
                 >
               </viewer>
+              <span v-else>-</span>
             </li>
           </ul>
         </div>
@@ -223,6 +236,9 @@ export default {
     },
     editCom(index){//企业详情
       this.editMes=this.comList[index];
+      this.$set(this.editMes,'pic',[]);
+      this.editMes.pic.push(this.editMes.businessLicense)
+      console.log(this.editMes)
       this.editComBox=true;
     },
     getComList(){//获取企业列表
@@ -258,16 +274,31 @@ export default {
       let _this=this;
       let formdata=new FormData();
       formdata.append('id',_this.editMes.id);
-      formdata.append('state',1);
+      formdata.append('state',2);
       _this.$axios.post(_this.url+'/ict/customer/updateState',formdata,{
         headers:{
           'Authorization':_this.token
         }
       }).then((res)=>{
+        console.log(res)
         if(res.data.code==0){
           _this.$message.success('已通过该企业认证');
           _this.getComList();
           _this.editComBox=false;
+          let formdataA=new FormData();
+          formdataA.append('operatorId',res.data.data.ictOperatorVO.id)
+          formdataA.append('title','犀牛小哥')
+          formdataA.append('type','消息通知')
+          formdataA.append('content','您已通过平台企业认证！');
+          this.$axios.post(this.url+'/ict/message/sendForOperator',formdataA).then((res)=>{
+            if(res.data.code==0){
+
+            }else{
+              this.$message.error(res.data.msg)
+            }
+          }).catch((err)=>{
+            _this.$message.error('未知错误,请联系管理员')
+          })
         }else{
           _this.$message.error(res.data.msg)
         }
@@ -290,6 +321,20 @@ export default {
           _this.$message.success('已驳回该企业认证');
           _this.getComList();
           _this.editComBox=false;
+          let formdataA=new FormData();
+          formdataA.append('operatorId',res.data.data.ictOperatorVO.id)
+          formdataA.append('title','犀牛小哥')
+          formdataA.append('type','消息通知')
+          formdataA.append('content','您未通过平台企业认证。');
+          this.$axios.post(this.url+'/ict/message/sendForOperator',formdataA).then((res)=>{
+            if(res.data.code==0){
+
+            }else{
+              this.$message.error(res.data.msg)
+            }
+          }).catch((err)=>{
+            _this.$message.error('未知错误,请联系管理员')
+          })
         }else{
           _this.$message.error(res.data.msg)
         }

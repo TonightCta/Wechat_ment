@@ -338,6 +338,7 @@ export default {
       _this.loadDemand=true;
       let formdata=new FormData();
       formdata.append('page',_this.page);
+      formdata.append('state',0);
       _this.$axios.post(_this.url+'/ict/demand/findListByCondition',formdata,{
         headers:{
           'Authorization':_this.token
@@ -390,6 +391,7 @@ export default {
         _this.$message.error('请输入项目备注')
       }else{
         let formdata=new FormData();
+        formdata.append('state',1)
         formdata.append('demandId',_this.editMes.id)
         formdata.append('projectName',_this.editMes.projectName)
         formdata.append('type',_this.editMes.type)
@@ -430,10 +432,25 @@ export default {
           'Authorization':_this.token
         }
       }).then((res)=>{
+        console.log(res)
         if(res.data.code==0){
           _this.$message.success('通过审核成功');
           _this.editDemBox=false;
-          _this.getDemadnList()
+          _this.getDemadnList();
+          let formdataA=new FormData();
+          formdataA.append('operatorId',res.data.data.operatorId)
+          formdataA.append('title','犀牛小哥')
+          formdataA.append('type','消息通知')
+          formdataA.append('content','您的项目'+_this.editMes.projectName+'已通过平台审核！');
+          this.$axios.post(this.url+'/ict/message/sendForOperator',formdataA).then((res)=>{
+            if(res.data.code==0){
+
+            }else{
+              this.$message.error(res.data.msg)
+            }
+          }).catch((err)=>{
+            this.$message.error('未知错误,请联系管理员')
+          })
         }else{
           _this.$message.error(res.data.msg)
         }
@@ -454,7 +471,21 @@ export default {
         if(res.data.code==0){
           _this.$message.success('驳回审核成功');
           _this.editDemBox=false;
-          _this.getDemadnList()
+          _this.getDemadnList();
+          let formdataA=new FormData();
+          formdataA.append('operatorId',res.data.data.operatorId)
+          formdataA.append('title','犀牛小哥')
+          formdataA.append('type','消息通知')
+          formdataA.append('content','您的项目'+_this.editMes.projectName+'未通过平台审核。');
+          this.$axios.post(this.url+'/ict/message/sendForOperator',formdataA).then((res)=>{
+            if(res.data.code==0){
+
+            }else{
+              this.$message.error(res.data.msg)
+            }
+          }).catch((err)=>{
+            this.$message.error('未知错误,请联系管理员')
+          })
         }else{
           _this.$message.error(res.data.msg)
         }

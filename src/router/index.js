@@ -49,6 +49,11 @@ const router = new Router({
           path:'/admin/demandMent',//项目经理需求管理
           name:'AdminDemandMent',
           component:resolve=>require(['@/page/demandAdmin/demandMent'],resolve)
+        },
+        {
+          path:'/admin/messageCenter',
+          name:'MessageCenter',
+          component:resolve=>require(['@/page/messageCenter/messageNot'],resolve)
         }
       ],
       redirect:'/admin/wel'
@@ -58,7 +63,7 @@ const router = new Router({
 
 //404检测
 router.beforeEach((to,from,next)=>{
-  const notList=['index','Wel','AdminDemandMent','DeMandAdmin','InternalEng','certifiedCom'];
+  const notList=['index','Wel','AdminDemandMent','DeMandAdmin','InternalEng','certifiedCom','MessageCenter'];
   if(notList.indexOf(to.name)<0){
     Message.warning('访问的页面不存在哦');
     window.localStorage.setItem('noUrl',true)
